@@ -3,11 +3,13 @@ import AuthForm from '@/components/AuthForm'
 import ResumeUpload from '@/components/ResumeUpload'
 import LogoutButton from '@/components/LogoutButton'
 import Link from 'next/link'
+import { isAdmin } from '@/lib/admin'
 
 export default async function Home() {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
+  const userIsAdmin = user ? isAdmin(user.id) : false
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-[#0a0a0a] dark:to-gray-950 font-inter">
@@ -33,6 +35,37 @@ export default async function Home() {
 
           {user ? (
             <div className="space-y-8">
+              {/* Admin Notice/Redirect */}
+              {userIsAdmin && (
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl border border-purple-200 dark:border-purple-800 p-6">
+                  <div className="flex items-center justify-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-purple-900 dark:text-purple-200">
+                        Admin Access
+                      </h2>
+                      <p className="text-purple-700 dark:text-purple-300 text-sm">
+                        You have administrator privileges
+                      </p>
+                    </div>
+                  </div>
+                  <Link 
+                    href="/admin"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-sm font-medium rounded-xl shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 transition-all duration-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Go to Admin Dashboard
+                  </Link>
+                </div>
+              )}
+
               {/* Welcome Section */}
               <div className="bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8">
                 <div className="flex items-center justify-center gap-3 mb-6">
@@ -43,7 +76,7 @@ export default async function Home() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                      Welcome back!
+                      Welcome back{userIsAdmin ? ', Admin' : ''}!
                     </h2>
                     <p className="text-gray-600 dark:text-gray-400">
                       {user.email}
