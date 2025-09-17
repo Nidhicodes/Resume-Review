@@ -38,7 +38,7 @@ export async function updateResume(formData: FormData) {
   const supabase = await createClient()
 
   const { data: { user: adminUser } } = await supabase.auth.getUser()
-  if (!adminUser || !isAdmin(adminUser.id)) {
+  if (!adminUser || !(await isAdmin(adminUser.id))) {
     throw new Error('Not authorized')
   }
   

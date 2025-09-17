@@ -64,20 +64,59 @@
 
 //Admin policies
 
+// -- Create a table for public user data
+// create table profiles (
+//   id uuid references auth.users not null primary key,
+//   email text,
+//   is_admin boolean default false
+// );
+
+// -- Set up Row Level Security (RLS)
+// -- See https://supabase.com/docs/guides/auth/row-level-security for more details.
+// alter table profiles
+//   enable row level security;
+
+// create policy "Public profiles are viewable by everyone." on profiles
+//   for select using (true);
+
+// create policy "Users can insert their own profile." on profiles
+//   for insert with check (auth.uid() = id);
+
+// create policy "Users can update own profile." on profiles
+//   for update using (auth.uid() = id);
+
+// create policy "Admins can update any profile." on profiles
+//   for update using (is_admin(auth.uid()));
+
+// -- This trigger automatically creates a profile for new users.
+// -- See https://supabase.com/docs/guides/auth/managing-user-data#using-triggers for more details.
+// create function public.handle_new_user()
+// returns trigger as $$
+// begin
+//   insert into public.profiles (id, email)
+//   values (new.id, new.email);
+//   return new;
+// end;
+// $$ language plpgsql security definer;
+// create trigger on_auth_user_created
+//   after insert on auth.users
+//   for each row execute procedure public.handle_new_user();
+
+
 // -- Helper function to check if the current user is an admin.
-// -- It checks the user's ID against a hardcoded list.
 // create or replace function is_admin(user_id uuid)
 // returns boolean
 // language plpgsql
 // security definer
 // set search_path = public
 // as $$
+// declare
+//   is_admin_user boolean;
 // begin
-//   return user_id in ('29514379-62bc-429f-8dc5-276b7862b1ec');
+//   select is_admin into is_admin_user from profiles where id = user_id;
+//   return coalesce(is_admin_user, false);
 // end;
 // $$;
-
-
 
 // -- Policy: Allow admins to view all resume records.
 // CREATE POLICY "Allow admins to view all resumes"

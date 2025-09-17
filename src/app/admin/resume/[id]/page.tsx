@@ -10,7 +10,7 @@ type PageProps = {
 export default async function SingleResumePage({ params }: PageProps) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user || !isAdmin(user.id)) {
+    if (!user || !(await isAdmin(user.id))) {
         return redirect('/')
     }
     const { data: resume, error } = await supabase

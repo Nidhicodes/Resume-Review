@@ -3,13 +3,15 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { isAdmin } from '@/lib/admin'
 import { format } from 'date-fns'
+import { AdminToggle } from '@/components/AdminToggle'
+import { updateAdminStatus } from './actions'
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || !isAdmin(user.id)) {
+  if (!user || !(await isAdmin(user.id))) {
     return redirect('/')
   }
 
@@ -17,6 +19,10 @@ export default async function AdminDashboardPage() {
     .from('resumes')
     .select('id, created_at, file_path, status, user_id')
     .order('created_at', { ascending: false })
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, email, is_admin')
 
   return (
     <div className="w-full max-w-7xl mx-auto py-12 px-6 font-inter">
@@ -161,6 +167,83 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
       )}
+      <div className="mt-12">
+        <h2 className="text-xl font-medium tracking-tight text-gray-900 dark:text-gray-100">
+          User Management
+        </h2>
+        <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
+          Manage user roles and permissions
+        </p>
+      </div>
+      <div className="mt-8 bg-white dark:bg-[#0a0a0a] rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        {profiles && profiles.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-900/50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    User ID
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Admin Status
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {profiles.map((profile) => (
+                  <tr
+                    key={profile.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors duration-150"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md inline-block">
+                        {profile.id.slice(0, 8)}...
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {profile.email}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                          profile.is_admin
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                        }`}
+                      >
+                        {profile.is_admin ? 'Admin' : 'User'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      {profile.id !== user.id && (
+                        <AdminToggle
+                          userId={profile.id}
+                          isAdmin={profile.is_admin}
+                          updateAdminStatus={updateAdminStatus}
+                        />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              No users found
+            </h3>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

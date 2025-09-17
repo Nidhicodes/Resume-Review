@@ -9,7 +9,7 @@ export default async function Home() {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  const userIsAdmin = user ? isAdmin(user.id) : false
+  const userIsAdmin = user ? await isAdmin(user.id) : false
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-[#0a0a0a] dark:to-gray-950 font-inter">
